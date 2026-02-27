@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./:/app
+      - ./data.sqlite:/app/data.sqlite
+    environment:
+      - PORT=4000
+      - JWT_SECRET=replace_this_secret

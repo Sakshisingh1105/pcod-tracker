@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PCOD Care Prototype</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 12px; }
+      .card { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+      input, button, select, textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; }
+      .row { display:flex; gap:8px; }
+      .row > * { flex:1 }
+      ul { padding-left: 18px }
+    </style>
+  </head>
+  <body>
+    <h1>PCOD Care — Prototype</h1>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const e = React.createElement;
+      function useState(init) { return React.useState(init); }
+
+      function App(){
+        const [token, setToken] = useState(localStorage.getItem('token'));
+        const [view, setView] = useState(token ? 'dashboard' : 'login');
+
+        function onLogin(t){ localStorage.setItem('token', t); setToken(t); setView('dashboard'); }
+        function onLogout(){ localStorage.removeItem('token'); setToken(null); setView('login'); }
+
+        return e('div', null,
+          view === 'login' && e(Login, { onLogin, switchToRegister: () => setView('register') }),
+          view === 'register' && e(Register, { onLogin, switchToLogin: () => setView('login') }),
+          view === 'dashboard' && e(Dashboard, { token, onLogout })
+        );
+      }
+
+      function Register({ onLogin, switchToLogin }){
+        const [name, setName] = useState('');
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [err, setErr] = useState('');
+
+        async function submit(){
+          setErr('');
+          const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,password}) });
+          const j = await res.json();
+          if (res.ok) { onLogin(j.token); } else { setErr(j.error || 'Error'); }
+        }
+
+        return e('div', {className:'card'},
+          e('h3', null, 'Register'),
+          e('input', { placeholder:'Name', value:name, onChange:e=>setName(e.target.value) }),
+          e('input', { placeholder:'Email', value:email, onChange:e=>setEmail(e.target.value) }),
+          e('input', { type:'password', placeholder:'Password', value:password, onChange:e=>setPassword(e.target.value) }),
+          err && e('div', { style:{color:'red'} }, err),
+          e('button', { onClick: submit }, 'Create account'),
+          e('div', null, 'Already have an account? ', e('a', { href:'#', onClick: (ev)=>{ ev.preventDefault(); switchToLogin(); } }, 'Login'))
+        );
+      }
+
+      function Login({ onLogin, switchToRegister }){
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [err, setErr] = useState('');
+
+        async function submit(){
+          setErr('');
+          const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+          const j = await res.json();
+          if (res.ok) { onLogin(j.token); } else { setErr(j.error || 'Error'); }
+        }
+
+        return e('div', {className:'card'},
+          e('h3', null, 'Login'),
+          e('input', { placeholder:'Email', value:email, onChange:e=>setEmail(e.target.value) }),
+          e('input', { type:'password', placeholder:'Password', value:password, onChange:e=>setPassword(e.target.value) }),
+          err && e('div', { style:{color:'red'} }, err),
+          e('button', { onClick: submit }, 'Login'),
+          e('div', null, 'New here? ', e('a', { href:'#', onClick: (ev)=>{ ev.preventDefault(); switchToRegister(); } }, 'Register'))
+        );
+      }
+
+      function Dashboard({ token, onLogout }){
+        const [periods, setPeriods] = useState([]);
+        const [start, setStart] = useState('');
+        const [end, setEnd] = useState('');
+        const [notes, setNotes] = useState('');
+
+        const [symptoms, setSymptoms] = useState([]);
+        const [sDate, setSDate] = useState('');
+        const [sType, setSType] = useState('');
+        const [sSeverity, setSSeverity] = useState(3);
+        const [sNotes, setSNotes] = useState('');
+        const [diet, setDiet] = useState([]);
+        const [dDate, setDDate] = useState('');
+        const [dCategory, setDCategory] = useState('');
+        const [dDesc, setDDesc] = useState('');
+        const [dCalories, setDCalories] = useState('');
+
+        const [workouts, setWorkouts] = useState([]);
+        const [wDate, setWDate] = useState('');
+        const [wType, setWType] = useState('');
+        const [wDuration, setWDuration] = useState('');
+        const [wNotes, setWNotes] = useState('');
+
+        const [analytics, setAnalytics] = useState(null);
+
+        async function load(){
+          const res1 = await fetch('/api/periods', { headers:{ Authorization: 'Bearer ' + token } });
+          if (res1.ok){ setPeriods(await res1.json()); }
+          const res2 = await fetch('/api/symptoms', { headers:{ Authorization: 'Bearer ' + token } });
+          if (res2.ok){ setSymptoms(await res2.json()); }
+          const res3 = await fetch('/api/diet', { headers:{ Authorization: 'Bearer ' + token } });
+          if (res3.ok){ setDiet(await res3.json()); }
+          const res4 = await fetch('/api/workouts', { headers:{ Authorization: 'Bearer ' + token } });
+          if (res4.ok){ setWorkouts(await res4.json()); }
+          const res5 = await fetch('/api/analytics', { headers:{ Authorization: 'Bearer ' + token } });
+          if (res5.ok){ setAnalytics(await res5.json()); }
+        }
+
+        React.useEffect(()=>{ load(); }, []);
+
+        async function addPeriod(){
+          await fetch('/api/periods', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ start_date: start, end_date: end, notes }) });
+          setStart(''); setEnd(''); setNotes(''); load();
+        }
+
+        async function addDiet(){
+          await fetch('/api/diet', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ date: dDate, category: dCategory, description: dDesc, calories: dCalories }) });
+          setDDate(''); setDCategory(''); setDDesc(''); setDCalories(''); load();
+        }
+
+        async function addWorkout(){
+          await fetch('/api/workouts', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ date: wDate, workout_type: wType, duration_minutes: wDuration, notes: wNotes }) });
+          setWDate(''); setWType(''); setWDuration(''); setWNotes(''); load();
+        }
+
+        async function addSymptom(){
+          await fetch('/api/symptoms', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ date: sDate, symptom_type: sType, severity: sSeverity, notes: sNotes }) });
+          setSDate(''); setSType(''); setSSeverity(3); setSNotes(''); load();
+        }
+
+        return e('div', null,
+          e('div', {className:'card'}, e('h3', null, 'Dashboard'), e('button', { onClick: onLogout }, 'Logout')),
+          e('div', {className:'card'},
+            e('h4', null, 'Log Period'),
+            e('div', {className:'row'}, e('input', { placeholder:'Start date (YYYY-MM-DD)', value:start, onChange:e=>setStart(e.target.value) }), e('input', { placeholder:'End date (YYYY-MM-DD)', value:end, onChange:e=>setEnd(e.target.value) })),
+            e('input', { placeholder:'Notes', value:notes, onChange:e=>setNotes(e.target.value) }),
+            e('button', { onClick: addPeriod }, 'Add')
+          ),
+          e('div', {className:'card'},
+            e('h4', null, 'Log Symptom'),
+            e('div', {className:'row'}, e('input', { placeholder:'Date (YYYY-MM-DD)', value:sDate, onChange:e=>setSDate(e.target.value) }), e('input', { placeholder:'Symptom (e.g. Acne)', value:sType, onChange:e=>setSType(e.target.value) })),
+            e('div', {className:'row'}, e('select', { value:sSeverity, onChange:e=>setSSeverity(parseInt(e.target.value)) }, [1,2,3,4,5].map(v => e('option', { key:v, value:v }, v + '')), e('input', { placeholder:'Notes', value:sNotes, onChange:e=>setSNotes(e.target.value) })),
+            e('button', { onClick: addSymptom }, 'Add Symptom')
+          ),
+          e('div', {className:'card'}, e('h4', null, 'Your Periods'), periods.length === 0 ? e('div', null, 'No logs yet') : e('ul', null, periods.map(p => e('li', { key: p.id }, `${p.start_date}${p.end_date ? ' → ' + p.end_date : ''} ${p.notes ? '- ' + p.notes : ''}`)))),
+          e('div', {className:'card'}, e('h4', null, 'Your Symptoms'), symptoms.length === 0 ? e('div', null, 'No symptoms logged') : e('ul', null, symptoms.map(s => e('li', { key: s.id }, `${s.date} — ${s.symptom_type} (Severity: ${s.severity || 'n/a'}) ${s.notes ? '- ' + s.notes : ''}`)))),
+
+          e('div', {className:'card'},
+            e('h4', null, 'Log Diet'),
+            e('div', {className:'row'}, e('input', { placeholder:'Date (YYYY-MM-DD)', value:dDate, onChange:e=>setDDate(e.target.value) }), e('input', { placeholder:'Category (e.g. Breakfast)', value:dCategory, onChange:e=>setDCategory(e.target.value) })),
+            e('input', { placeholder:'Description', value:dDesc, onChange:e=>setDDesc(e.target.value) }),
+            e('input', { placeholder:'Calories', value:dCalories, onChange:e=>setDCalories(e.target.value) }),
+            e('button', { onClick: addDiet }, 'Add Diet')
+          ),
+          e('div', {className:'card'}, e('h4', null, 'Your Diet Logs'), diet.length === 0 ? e('div', null, 'No diet logs') : e('ul', null, diet.map(d => e('li', { key: d.id }, `${d.date} — ${d.category || ''} ${d.description ? '- ' + d.description : ''} ${d.calories ? '(' + d.calories + ' kcal)' : ''}`)))),
+
+          e('div', {className:'card'},
+            e('h4', null, 'Log Workout'),
+            e('div', {className:'row'}, e('input', { placeholder:'Date (YYYY-MM-DD)', value:wDate, onChange:e=>setWDate(e.target.value) }), e('input', { placeholder:'Type (e.g. Yoga)', value:wType, onChange:e=>setWType(e.target.value) })),
+            e('input', { placeholder:'Duration (minutes)', value:wDuration, onChange:e=>setWDuration(e.target.value) }),
+            e('input', { placeholder:'Notes', value:wNotes, onChange:e=>setWNotes(e.target.value) }),
+            e('button', { onClick: addWorkout }, 'Add Workout')
+          ),
+          e('div', {className:'card'}, e('h4', null, 'Your Workouts'), workouts.length === 0 ? e('div', null, 'No workouts logged') : e('ul', null, workouts.map(w => e('li', { key: w.id }, `${w.date} — ${w.workout_type} (${w.duration_minutes || 'n/a'} min) ${w.notes ? '- ' + w.notes : ''}`)))),
+
+          e('div', {className:'card'}, e('h4', null, 'Analytics'), analytics ? e('div', null, e('canvas', { id: 'chart1', width:400, height:200 }), e('div', null, e('small', null, 'Symptom frequency and diet/workout breakdown below.'))) : e('div', null, 'Loading analytics...'))
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+
+      // Render analytics chart after data loads
+      const origEffect = React.useEffect;
+      React.useEffect = function(cb, deps){
+        // call original
+        return origEffect(cb, deps);
+      };
+
+      // small interval to wait for analytics canvas
+      setInterval(()=>{
+        const canvas = document.getElementById('chart1');
+        if (!canvas) return;
+        if (!window._analyticsRendered){
+          fetch('/api/analytics', { headers:{ Authorization: 'Bearer ' + localStorage.getItem('token') } }).then(r=>r.json()).then(data=>{
+            try{
+              const labels = (data.symptom_freq || []).map(s=>s.symptom_type);
+              const values = (data.symptom_freq || []).map(s=>s.cnt);
+              const ctx = canvas.getContext('2d');
+              new Chart(ctx, { type: 'bar', data: { labels, datasets:[{ label: 'Symptom frequency', data: values, backgroundColor: 'rgba(75,192,192,0.6)' }] }, options: {} });
+              window._analyticsRendered = true;
+            }catch(e){ console.warn('chart error', e); }
+          }).catch(()=>{});
+        }
+      }, 1000);
+    </script>
+  </body>
+  </html>
