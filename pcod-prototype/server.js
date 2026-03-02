@@ -40,19 +40,30 @@ app.post('/api/register', async (req, res) => {
     const { name, email, password, age, height, weight, cycle_length } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
     db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
-      if (err) return res.status(500).json({ error: 'Server error' });
+      if (err) {
+        console.error('DB error checking email:', err);
+        return res.status(500).json({ error: 'Server error: ' + err.message });
+      }
       if (row) return res.status(400).json({ error: 'Email already registered' });
-      const hash = await bcrypt.hash(password, 10);
-      db.run('INSERT INTO users (name,email,password,age,height,weight,cycle_length) VALUES (?,?,?,?,?,?,?)', 
-        [name, email, hash, age || null, height || null, weight || null, cycle_length || null], function(err2){
-        if (err2) return res.status(500).json({ error: 'Server error' });
-        const token = jwt.sign({ id: this.lastID }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, userId: this.lastID });
-      });
+      try {
+        const hash = await bcrypt.hash(password, 10);
+        db.run('INSERT INTO users (name,email,password,age,height,weight,cycle_length) VALUES (?,?,?,?,?,?,?)', 
+          [name, email, hash, age || null, height || null, weight || null, cycle_length || null], function(err2){
+          if (err2) {
+            console.error('DB error inserting user:', err2);
+            return res.status(500).json({ error: 'Server error: ' + err2.message });
+          }
+          const token = jwt.sign({ id: this.lastID }, JWT_SECRET, { expiresIn: '7d' });
+          res.json({ token, userId: this.lastID });
+        });
+      } catch (hashErr) {
+        console.error('Hash error:', hashErr);
+        res.status(500).json({ error: 'Server error: ' + hashErr.message });
+      }
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
