@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCOD Care Platform</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.10.0/dist/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=fixed">
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { LineChart, BarChart, PieChart, RadarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, Bar, Pie, Radar, Cell, PolarGrid, PolarAngleAxis, ResponsiveContainer } = window.Recharts || {};
+
+    // ═════ CONSTANTS ═════
+    const FULL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const CYCLE_DATA = [
+      {month: "Aug", len: 33, weight: 62},
+      {month: "Sep", len: 35, weight: 62.5},
+      {month: "Oct", len: 31, weight: 62},
+      {month: "Nov", len: 34, weight: 63},
+      {month: "Dec", len: 32, weight: 62.5},
+      {month: "Jan", len: 33, weight: 62},
+    ];
+    const SYMPTOMS_LIST = [
+      {id: "acne", l: "Acne", i: "🤒"},
+      {id: "hair", l: "Hair Fall", i: "💇"},
+      {id: "mood", l: "Mood Swings", i: "😞"},
+      {id: "fatigue", l: "Fatigue", i: "😴"},
+      {id: "cravings", l: "Cravings", i: "🍫"},
+      {id: "bloating", l: "Bloating", i: "🤰"},
+      {id: "cramps", l: "Cramps", i: "🤕"},
+      {id: "headache", l: "Headache", i: "🤐"},
+      {id: "nausea", l: "Nausea", i: "😵"},
+    ];
+    const SYMPTOM_DATA = [
+      {name: "Acne", val: 8},
+      {name: "Fatigue", val: 12},
+      {name: "Mood Swings", val: 9},
+      {name: "Cravings", val: 6},
+      {name: "Bloating", val: 7},
+    ];
+    const PIE_C = ["#C84B7A", "#D97706", "#7C3AED", "#2563EB", "#059669", "#EC4899", "#F59E0B"];
+    const MEALS = [
+      {id: 1, n: "Overnight Oats", m: "breakfast", e: "🥣", c: "280", meal: "Oats, yogurt, berries"},
+      {id: 2, n: "Green Smoothie", m: "breakfast", e: "🥤", c: "200", meal: "Spinach, apple, almond milk"},
+      {id: 3, n: "Lentil Soup", m: "lunch", e: "🥘", c: "320", meal: "Red lentils, veggies"},
+      {id: 4, n: "Quinoa Salad", m: "lunch", e: "🥗", c: "350", meal: "Quinoa, veggies, lemon"},
+      {id: 5, n: "Grilled Salmon", m: "dinner", e: "🐟", c: "450", meal: "Salmon, roasted veg"},
+      {id: 6, n: "Almond Butter Snack", m: "snack", e: "🥜", c: "180", meal: "Almond butter on apple"},
+      {id: 7, n: "Greek Yogurt Bowl", m: "breakfast", e: "🥛", c: "200", meal: "Yogurt, berries, nuts"},
+      {id: 8, n: "Baked Sweet Potato", m: "dinner", e: "🍠", c: "150", meal: "Sweet potato, cinnamon"},
+    ];
+    const EXERCISES = [
+      {id: 1, n: "Yoga", i: "🧘", t: "Low", d: "30–45 min", c: 150},
+      {id: 2, n: "Brisk Walking", i: "🚶", t: "Easy", d: "30–45 min", c: 200},
+      {id: 3, n: "Strength Training", i: "💪", t: "Moderate", d: "45–60 min", c: 300},
+      {id: 4, n: "Swimming", i: "🏊", t: "Moderate", d: "45 min", c: 250},
+      {id: 5, n: "Zumba", i: "💃", t: "High", d: "45 min", c: 350},
+      {id: 6, n: "Pilates", i: "🤸", t: "Moderate", d: "45 min", c: 200},
+    ];
+
+    const PARTNER_MODULES = [
+      {
+        id: "basics", title: "Understanding PCOD", emoji: "🧬", color: "#F5F3FF", border: "#C4B5FD", badge: "Start Here",
+        content: [
+          {q: "What is PCOD/PCOS?", a: "PCOD (Polycystic Ovarian Disease) = PCOS (Polycystic Ovary Syndrome). It's a hormonal disorder affecting 1 in 10 women. The ovaries produce excess andro gens (male hormones), causing irregular periods, acne, weight gain, and hair growth.", icon: "🧬"},
+          {q: "How is it different from other period issues?", a: "Normal irregular periods = temporary. PCOD = chronic hormonal imbalance. Your partner's PCOD is NOT her fault. It's a medical condition like diabetes — not a lifestyle failure.", icon: "⚖️"},
+          {q: "What causes it?", a: "Root cause = insulin resistance (she can't process sugar efficiently). This triggers her ovaries to overproduce androgens. Inflammation, genetics, and environment all play roles.", icon: "🔗"},
+        ]
+      },
+      {
+        id: "period", title: "The Menstrual Cycle Explained", emoji: "🩸", color: "#FDF0F5", border: "#F5BDCE", badge: "Core Knowledge",
+        content: [
+          {q: "What happens during her period?", a: "Day 1–5: Shedding of uterine lining. Blood flow is normal. She'll feel cramping, fatigue, and mood swings due to prostaglandins (chemicals that trigger uterine contractions).", icon: "🩸"},
+          {q: "What's the fertile window?", a: "Days 10–17 (roughly). This is when pregnancy is possible. During this time she has more energy and confidence — ride that wave with her.", icon: "🌱"},
+          {q: "What is PMS?", a: "Days 21–28 (luteal phase). Serotonin & dopamine drop. She experiences mood swings, cravings, bloating, fatigue. It's REAL — not 'drama.' Clinical name: PMDD if severe.", icon: "😔"},
+        ]
+      },
+      {
+        id: "support", title: "How to Support Her", emoji: "💙", color: "#EFF6FF", border: "#BFDBFE", badge: "Most Important",
+        content: [
+          {q: "What does she need from you?", a: "Listen without fixing. Cook when she's in pain. Validate: 'Your pain is real.' Don't say 'just be positive.' Show interest in her PCOD — ask about her symptoms, diet wins, and feelings.", icon: "💙"},
+          {q: "How to help during her period?", a: "✅ Keep heating pads ready\n✅ Do physical tasks (cooking, dishes)\n✅ Offer pain meds if needed\n✅ Avoid planning heavy activities\n✅ Give space but be present\n✅ Say 'How can I help?'", icon: "🤕"},
+          {q: "What NOT to do?", a: "❌ Don't ask 'Is it that time of the month?'\n❌ Never say she's 'being dramatic'\n❌ Don't minimize: 'Other women handle it'\n❌ Don't comment on her body/weight\n❌ Don't push unwanted advice\n❌ Don't touch if she's in pain without asking", icon: "⛔"},
+          {q: "How often should you check in?", a: "Daily 'How are you?\' is enough. During period: daily + extra checking. Don't make it clinical — just show you care. Let her lead the conversation about her PCOD.", icon: "📞"},
+          {q: "Can you help with diet?", a: "YES. Stock PCOD-friendly foods: leafy greens, nuts, salmon, berries, lentils. AVOID: white bread, sugary drinks, processed snacks. Suggest meals, don't force. Eat together.", icon: "🥗"},
+        ]
+      },
+      {
+        id: "diet", title: "Diet & Lifestyle Help", emoji: "🥗", color: "#ECFDF5", border: "#A7F3D0", badge: "Practical",
+        content: [
+          {q: "What foods help with PCOD?", a: "Inositol-rich: Legumes, citrus\nOmega-3s: Salmon, walnuts, flax\nFiber: Vegetables, whole grains\nAnti-inflammatory: Turmeric, cinnamon\nProtein: Eggs, yogurt, lean meat\nMinerals: Leafy greens for magnesium", icon: "🌿"},
+          {q: "What foods should she avoid?", a: "❌ White bread (spikes blood sugar)\n❌ Sugary soda & juice\n❌ Fast food & fried stuff\n❌ Refined sugar & desserts\n❌ Alcohol (worsens hormones)\n❌ Excess dairy (some women worse)\n❌ Processed snacks", icon: "🚫"},
+          {q: "How do you encourage healthy eating?", a: "1. Suggest, don't preach\n2. Eat WITH her (lead by example)\n3. Cook TOGETHER (fun bonding)\n4. Stock healthy snacks\n5. Plan meals together\n6. Never comment on what she eats\n7. Celebrate her wins silently", icon: "👨‍🍳"},
+        ]
+      },
+      {
+        id: "mental", title: "Mental Health & PCOD", emoji: "🧠", color: "#F5F3FF", border: "#C4B5FD", badge: "Vital",
+        content: [
+          {q: "PCOD and mental health are linked", a: "50–70% of women with PCOD experience anxiety or depression. It's caused by hormonal imbalance (not weakness). She literally has a different brain chemistry during certain phases.", icon: "🔗"},
+          {q: "Signs she may be struggling:", a: "Crying more than usual, withdrawing from social activities, feeling hopeless about her health, extreme irritability, sleep problems, loss of interest in things she loves. Take these seriously.", icon: "🚨"},
+          {q: "What NOT to do:", a: "❌ Don't say 'just be positive'\n❌ Don't suggest she's 'overthinking'\n❌ Don't minimize: 'other people have it worse'\n❌ Don't push therapy aggressively\n❌ Don't get frustrated with her emotions", icon: "🚫"},
+          {q: "What TO do:", a: "✅ Listen without fixing\n✅ Sit with her in silence if needed\n✅ Say 'Your feelings are valid'\n✅ Gently suggest professional support\n✅ Research therapists together\n✅ Remind her she isn't broken", icon: "💙"},
+          {q: "Your own mental health matters too", a: "Being a support partner can be emotionally draining. Join communities of partners of PCOD/PCOS women. Talk to friends or a therapist yourself. You can't pour from an empty cup.", icon: "🫀"},
+        ]
+      },
+    ];
+
+    // ═════ HELPER FUNCTIONS ═════
+    const ini = (n = "U") => n.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+    const getDays = (y, m) => new Date(y, m + 1, 0).getDate();
+    const getFirst = (y, m) => new Date(y, m, 1).getDay();
+
+    // ═════ TOAST ═════
+    function Toast({ msg, icon, close }) {
+      useEffect(() => { const t = setTimeout(close, 3000); return () => clearTimeout(t); }, []);
+      return <div className="toast"><span>{icon || "✅"}</span><span>{msg}</span></div>;
+    }
+
+    // ═════ CALENDAR ═════
+    function CycleCalendar({ pdays, onDay }) {
+      const today = new Date();
+      const [y, setY] = useState(today.getFullYear());
+      const [m, setM] = useState(today.getMonth());
+      const days = getDays(y, m);
+      const first = getFirst(y, m);
+      const prev = () => m === 0 ? (setM(11), setY(y - 1)) : setM(m - 1);
+      const next = () => m === 11 ? (setM(0), setY(y + 1)) : setM(m + 1);
+      const dtype = day => {
+        const d = new Date(y, m, day);
+        if (pdays.some(p => p.toDateString() === d.toDateString())) return "period";
+        if (d.toDateString() === today.toDateString()) return "today";
+        if (day >= 11 && day <= 17 && m === today.getMonth()) return "fertile";
+        if (day === 14 && m === today.getMonth()) return "ov";
+        if (day >= 28 && day <= 31 && m === today.getMonth()) return "pred";
+        return "";
+      };
+      return (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <button className="btn btn-ghost" style={{ padding: "5px 10px" }} onClick={prev}>‹</button>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18 }}>{FULL_MONTHS[m]} {y}</h3>
+            <button className="btn btn-ghost" style={{ padding: "5px 10px" }} onClick={next}>›</button>
+          </div>
+          <div className="cal-grid">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => <div key={d} className="cal-hd">{d}</div>)}
+            {Array(first).fill(null).map((_, i) => <div key={`e${i}`} />)}
+            {Array(days).fill(null).map((_, i) => {
+              const d = i + 1;
+              const t = dtype(d);
+              return <div key={d} className={`cal-d ${t}`} onClick={() => onDay && onDay(new Date(y, m, d), t)}>{d}</div>;
+            })}
+          </div>
+          <div className="cal-legend">
+            <div className="cl-item"><div className="cl-dot" style={{ background: "#C84B7A" }} /> Period</div>
+            <div className="cl-item"><div className="cl-dot" style={{ background: "#16A34A" }} /> Fertile</div>
+            <div className="cl-item"><div className="cl-dot" style={{ background: "#D97706" }} /> Ovulation</div>
+          </div>
+        </div>
+      );
+    }
+
+    // ═════ WOMAN PORTAL ═════
+    function WomanDashboard({ user, water, setWater, toast }) {
+      const bmi = ((+user.weight) / ((+user.height / 100) ** 2)).toFixed(1);
+      return <div className="fade">
+        <div className="g4">
+          {[{ l: "Cycle Day", v: "Day 18", n: "10 days to next period", c: "s-rose", i: "🩸", g: "linear-gradient(135deg, #C84B7A, #E15597)" },
+          { l: "Weight", v: `${user.weight}kg`, n: "↓ 0.5kg this week", c: "s-pink", i: "⚖️", g: "linear-gradient(135deg, #F5BDCE, #E8A4C0)" },
+          { l: "BMI", v: bmi, n: "Healthy range", c: "s-green", i: "📊", g: "linear-gradient(135deg, #059669, #10B981)" },
+          { l: "Water Today", v: `${water * 250}ml`, n: `${water}/8 glasses`, c: "s-blue", i: "💧", g: "linear-gradient(135deg, #2563EB, #3B82F6)" },
+          ].map((s, i) => <div key={i} className={`stat ${s.c} fade stagger-${i + 1}`} style={{ background: `${s.g}15`, borderImage: `linear-gradient(135deg, ${s.g.split(", ")[0]}, ${s.g.split(", ")[1]}) 1`, borderImageSlice: 1 }}>
+            <div className="stat-icon" style={{ fontSize: "32px" }}>{s.i}</div><div className="stat-val" style={{ background: s.g, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{s.v}</div>
+            <div className="stat-lbl">{s.l}</div><div className="stat-note" style={{ color: "#64748B" }}>{s.n}</div>
+          </div>)}
+        </div>
+        <div className="g2">
+          <div className="card" style={{ background: "linear-gradient(135deg, #FDF0F5, #fff)", borderLeft: "4px solid #C84B7A" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div><div className="card-title">Water Intake 💧</div><div className="card-sub">Daily goal: 8 glasses</div></div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0" }}>
+              {Array(8).fill(null).map((_, i) => <div key={i} className={`wdrop ${i < water ? "full" : ""}`} onClick={() => setWater(i < water ? i : i + 1)} style={{ cursor: "pointer", fontSize: "18px" }}>💧</div>)}
+            </div>
+            <div style={{ fontSize: 12, color: "#64748B", fontWeight: "500" }}>{water >= 8 ? "🎉 Daily goal achieved!" : ` ${water}/8 — keep going!`}</div>
+          </div>
+          <div className="card" style={{ background: "linear-gradient(135deg, #F0FDF4, #fff)", borderLeft: "4px solid #059669" }}>
+            <div className="card-title">Quick Tips</div>
+            <p style={{ fontSize: 12, color: "#475569", lineHeight: 1.8, marginTop: 8 }}>
+              ✨ Today you're in your <span style={{ fontWeight: "700", color: "#059669" }}>luteal phase</span>. Focus on iron-rich foods and gentle exercise. Your mood may be lower — that's normal and temporary.
+            </p>
+          </div>
+        </div>
+      </div>;
+    }
+
+    function AuthScreen({ onLogin }) {
+      const [step, setStep] = useState("portal");
+      const [portal, setPortal] = useState(null);
+      const [mode, setMode] = useState("login");
+      const [form, setForm] = useState({ name: "", email: "", password: "", age: "28", height: "162", weight: "62", cycle: "28", school: "", subject: "", partnerName: "" });
+      const [err, setErr] = useState("");
+      const h = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+      const portals = [
+        {
+          id: "woman", icon: "🌸", title: "PCOD Warrior",
+          desc: "Track your cycle, symptoms, diet & workouts. Get personalized insights for your PCOD journey.",
+          bg: "linear-gradient(135deg,#FDF0F5,#FDEEF8)", border: "#F5BDCE", titleC: "#7A1F4A",
+        },
+        {
+          id: "partner", icon: "💙", title: "Supportive Partner",
+          desc: "Learn everything about PCOD to become the best support system for your partner. Practical guides & daily help.",
+          bg: "linear-gradient(135deg,#EFF6FF,#F0F9FF)", border: "#BFDBFE", titleC: "#1E3A8A",
+        },
+        {
+          id: "educator", icon: "📚", title: "Educator / Teacher",
+          desc: "Access structured curricula, lesson plans, and classroom tools to educate students about menstrual health.",
+          bg: "linear-gradient(135deg,#ECFDF5,#F0FDF4)", border: "#A7F3D0", titleC: "#064E3B",
+        },
+      ];
+
+      const submit = () => {
+        if (!form.email || !form.password) { setErr("Please fill all required fields."); return; }
+        if (mode === "signup" && !form.name) { setErr("Please enter your name."); return; }
+        setErr("");
+        onLogin({
+          portal, name: form.name || (portal === "educator" ? "Dr. Priya Singh" : "Rahul Sharma"),
+          email: form.email, age: form.age || "28", height: form.height || "162",
+          weight: form.weight || "62", cycle: form.cycle || "28",
+          school: form.school, subject: form.subject, partnerName: form.partnerName,
+        });
+      };
+
+      const btnC = portal === "partner" ? "btn-p" : portal === "educator" ? "btn-e" : "btn-w";
+      const focusC = portal === "partner" ? "#2563EB" : portal === "educator" ? "#059669" : "#C84B7A";
+
+      if (step === "portal") return (
+        <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0F172A 0%, #1a2f5c 50%, #2d1b4e 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px", position: "relative", overflow: "hidden" }}>
+          {/* Animated background circles */}
+          <div style={{ position: "absolute", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(200,75,122,0.15) 0%, transparent 70%)", borderRadius: "50%", top: "-100px", left: "-100px", animation: "pulse 8s ease-in-out infinite" }} />
+          <div style={{ position: "absolute", width: "300px", height: "300px", background: "radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)", borderRadius: "50%", bottom: "50px", right: "-50px", animation: "pulse 10s ease-in-out infinite" }} />
+          
+          <div style={{ maxWidth: 900, width: "100%", position: "relative", zIndex: 2 }}>
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <div style={{ width: 80, height: 80, background: "linear-gradient(135deg, #C84B7A, #E15597, #7A1F4A)", borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, margin: "0 auto 16px", boxShadow: "0 20px 60px rgba(200,75,122,0.5), 0 0 40px rgba(200,75,122,0.3)", animation: "bounce 3s ease-in-out infinite" }}>🌸</div>
+              <h1 style={{ fontFamily: "'Cormorant Garamond', serif", color: "#fff", fontSize: 48, fontWeight: 800, marginBottom: 8, letterSpacing: "-1px" }}>PCOD Care Platform</h1>
+              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, maxWidth: 520, margin: "0 auto", lineHeight: "1.6" }}>A comprehensive health system for women with PCOD — and everyone who wants to support them. Your journey, beautifully tracked.</p>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 40 }}>
+              {portals.map((p, idx) => (
+                <div key={p.id} 
+                  className="portal-card fade" 
+                  style={{ 
+                    background: p.bg, 
+                    border: `2.5px solid ${portal === p.id ? p.border : "rgba(255,255,255,0.1)"}`,
+                    boxShadow: portal === p.id ? `0 20px 60px rgba(0,0,0,0.3), 0 0 20px ${p.border}` : "0 8px 32px rgba(0,0,0,0.2)",
+                    cursor: "pointer",
+                    transform: portal === p.id ? "scale(1.05)" : "scale(1)",
+                    transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    position: "relative",
+                    overflow: "hidden",
+                    animation: `slideInUp 0.6s ease ${idx * 0.1}s backwards`
+                  }} 
+                  onClick={() => setPortal(p.id)}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = portal === p.id ? "scale(1.05)" : "scale(1)"}
+                >
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: `linear-gradient(135deg, ${p.border}00, ${p.border}15)`, opacity: portal === p.id ? 1 : 0, transition: "opacity 0.3s ease" }} />
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div className="portal-icon" style={{ fontSize: 56, marginBottom: 16 }}>{p.icon}</div>
+                    <div className="portal-title" style={{ color: p.titleC, fontSize: "20px", fontWeight: 800, marginBottom: 8 }}>{p.title}</div>
+                    <div className="portal-desc" style={{ color: "#64748B", fontSize: "13px", lineHeight: "1.6", marginBottom: 12 }}>{p.desc}</div>
+                    {portal === p.id && (
+                      <div style={{ marginTop: 12, animation: "slideInDown 0.4s ease" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: p.titleC, background: `${p.titleC}20`, padding: "6px 12px", borderRadius: "20px", display: "inline-block" }}>✓ Selected</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <button 
+                className={`btn ${portal ? "btn-w" : "btn-ghost"} btn-full`} 
+                style={{ 
+                  maxWidth: 360, 
+                  margin: "0 auto",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  padding: "14px 28px",
+                  letterSpacing: "0.5px",
+                  background: portal ? "linear-gradient(135deg, #C84B7A, #E15597)" : "transparent",
+                  boxShadow: portal ? "0 12px 32px rgba(200,75,122,0.4)" : "none",
+                  border: portal ? "none" : "2px solid rgba(255,255,255,0.3)",
+                  color: portal ? "#fff" : "#fff",
+                  transition: "all 0.3s ease"
+                }}
+                disabled={!portal} 
+                onClick={() => portal && setStep("form")}
+                onMouseEnter={(e) => portal && (e.target.style.boxShadow = "0 16px 48px rgba(200,75,122,0.6)")}
+                onMouseLeave={(e) => portal && (e.target.style.boxShadow = "0 12px 32px rgba(200,75,122,0.4)")}
+              >
+                Continue as {portal === "woman" ? "PCOD Warrior" : portal === "partner" ? "Supportive Partner" : portal === "educator" ? "Educator" : "..."}  →
+              </button>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 0.5; }
+              50% { transform: scale(1.1); opacity: 0.8; }
+            }
+            @keyframes bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-15px); }
+            }
+            @keyframes slideInUp {
+              from { opacity: 0; transform: translateY(30px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes slideInDown {
+              from { opacity: 0; transform: translateY(-15px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+        </div>
+      );
+
+      return (
+        <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0F172A 0%, #1a2f5c 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", width: "500px", height: "500px", background: "radial-gradient(circle, rgba(200,75,122,0.1) 0%, transparent 70%)", borderRadius: "50%", top: "-200px", right: "-200px" }} />
+          
+          <div style={{ background: "linear-gradient(135deg, #fff 0%, #f8f9fa 100%)", borderRadius: 24, padding: "44px 48px", maxWidth: 520, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(200,75,122,0.1)", position: "relative", zIndex: 1 }}>
+            <button className="btn btn-ghost" style={{ marginBottom: 20, fontSize: 12, padding: "8px 12px" }} onClick={() => { setStep("portal"); setErr(""); }}>← Back to portal selection</button>
+            
+            {/* Portal Header */}
+            <div style={{ textAlign: "center", marginBottom: 32, paddingBottom: 24, borderBottom: `2px solid ${focusC}30` }}>
+              <div style={{ fontSize: 56, marginBottom: 12 }}>{portals.find(p => p.id === portal)?.icon}</div>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, marginBottom: 6, color: focusC, fontWeight: "800" }}>
+                {mode === "login" ? "Welcome Back" : "Join Us"}
+              </h2>
+              <p style={{ color: "#64748B", fontSize: 13, fontWeight: 600 }}>
+                {portal === "woman" ? "Track your PCOD journey with confidence" : portal === "partner" ? "Support your partner every step of the way" : "Educate the next generation about health"}
+              </p>
+            </div>
+
+            <style>{`:root{--focus-c:${focusC}}`}</style>
+
+            {/* Portal-Specific Fields */}
+            {portal === "woman" && (
+              <>
+                {mode === "signup" && (
+                  <>
+                    <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>📋 Personal Information</div>
+                      <div className="fg"><label className="fl">Full Name</label><input className="fi" name="name" placeholder="Your full name" value={form.name} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="fg"><label className="fl">Age</label><input className="fi" name="age" type="number" placeholder="25" value={form.age} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                        <div className="fg"><label className="fl">Cycle Length (days)</label><input className="fi" name="cycle" type="number" placeholder="28" value={form.cycle} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="fg"><label className="fl">Height (cm)</label><input className="fi" name="height" type="number" placeholder="162" value={form.height} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                        <div className="fg"><label className="fl">Weight (kg)</label><input className="fi" name="weight" type="number" placeholder="62" value={form.weight} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>🔐 Account Security</div>
+                  <div className="fg"><label className="fl">Email Address</label><input className="fi" name="email" type="email" placeholder="you@email.com" value={form.email} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                  <div className="fg"><label className="fl">Password</label><input className="fi" name="password" type="password" placeholder="••••••••" value={form.password} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                </div>
+              </>
+            )}
+
+            {portal === "partner" && (
+              <>
+                {mode === "signup" && (
+                  <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>💙 Your Information</div>
+                    <div className="fg"><label className="fl">Your Full Name</label><input className="fi" name="name" placeholder="Your full name" value={form.name} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                    <div className="fg"><label className="fl">Partner's Name</label><input className="fi" name="partnerName" placeholder="Your partner's name" value={form.partnerName} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                  </div>
+                )}
+                <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>🔐 Account Security</div>
+                  <div className="fg"><label className="fl">Email Address</label><input className="fi" name="email" type="email" placeholder="you@email.com" value={form.email} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                  <div className="fg"><label className="fl">Password</label><input className="fi" name="password" type="password" placeholder="••••••••" value={form.password} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                </div>
+              </>
+            )}
+
+            {portal === "educator" && (
+              <>
+                {mode === "signup" && (
+                  <>
+                    <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>👨‍🏫 Professional Details</div>
+                      <div className="fg"><label className="fl">Full Name</label><input className="fi" name="name" placeholder="Your full name" value={form.name} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div className="fg"><label className="fl">School / Institution</label><input className="fi" name="school" placeholder="School name" value={form.school} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                        <div className="fg"><label className="fl">Subject / Role</label><input className="fi" name="subject" placeholder="e.g. Biology" value={form.subject} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                <div style={{ background: `${focusC}08`, border: `1px solid ${focusC}20`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: focusC, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>🔐 Account Security</div>
+                  <div className="fg"><label className="fl">Email Address</label><input className="fi" name="email" type="email" placeholder="you@email.com" value={form.email} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                  <div className="fg"><label className="fl">Password</label><input className="fi" name="password" type="password" placeholder="••••••••" value={form.password} onChange={h} style={{ borderColor: "#E2E8F0", background: "#f8f9fa" }} /></div>
+                </div>
+              </>
+            )}
+
+            {/* Error Message */}
+            {err && (
+              <div style={{ 
+                color: "#DC2626", 
+                fontSize: 12, 
+                marginBottom: 16, 
+                background: "#FEE2E2", 
+                padding: "12px 16px", 
+                borderRadius: "8px", 
+                borderLeft: `4px solid #DC2626`,
+                display: "flex",
+                gap: "8px",
+                alignItems: "center"
+              }}>
+                <span style={{ fontSize: 16 }}>⚠️</span>
+                <span style={{ fontWeight: 600 }}>{err}</span>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button 
+              className={`btn ${btnC} btn-full`} 
+              onClick={submit}
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                padding: "14px 20px",
+                letterSpacing: "0.5px",
+                marginBottom: 16
+              }}
+            >
+              {mode === "login" ? "Sign In →" : "Create Account →"}
+            </button>
+
+            {/* Toggle Mode */}
+            <div style={{ textAlign: "center", fontSize: 13, color: "#94A3B8" }}>
+              {mode === "login" ? (
+                <span>No account? <span style={{ color: focusC, cursor: "pointer", fontWeight: 700, transition: "all 0.3s" }} onClick={() => { setMode("signup"); setErr(""); }} onMouseEnter={(e) => e.target.style.opacity = "0.7"} onMouseLeave={(e) => e.target.style.opacity = "1"}>Sign up free</span></span>
+              ) : (
+                <span>Have account? <span style={{ color: focusC, cursor: "pointer", fontWeight: 700, transition: "all 0.3s" }} onClick={() => { setMode("login"); setErr(""); }} onMouseEnter={(e) => e.target.style.opacity = "0.7"} onMouseLeave={(e) => e.target.style.opacity = "1"}>Sign in</span></span>
+              )}
+            </div>
+
+            {/* Bottom Info */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #E2E8F0", fontSize: 11, color: "#94A3B8", textAlign: "center" }}>
+              {portal === "woman" && "✓ Secure • ✓ Private • ✓ Free"}
+              {portal === "partner" && "💙 Support with care • 🔒 Secure sharing • 📖 Learn together"}
+              {portal === "educator" && "📚 Access resources • 🎓 Structured curricula • 🌍 Make impact"}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ═════ PARTNER PORTAL ═════
+    function PartnerDash({ user }) {
+      return <div className="fade">
+        <div style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)", borderRadius: 20, padding: 32, color: "#fff", marginBottom: 28, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(37,99,235,0.3)" }}>
+          <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "200px", height: "200px", background: "radial-gradient(circle, rgba(255,255,255,0.1))", borderRadius: "50%" }} />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>💙</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, marginBottom: 10, fontWeight: "800", letterSpacing: "-0.5px" }}>Welcome, {user.name}</h2>
+            <p style={{ opacity: .85, fontSize: 15, lineHeight: 1.8, maxWidth: 600 }}>
+              You're taking an important step by learning about PCOD. Your awareness and support can make a profound difference in {user.partnerName || "your partner"}'s health journey.
+            </p>
+            <div style={{ display: "flex", gap: 32, marginTop: 24, flexWrap: "wrap" }}>
+              {[{ v: "377M+", l: "Women with PCOS globally" }, { v: "70%", l: "Cases undiagnosed" }, { v: "50%+", l: "Have anxiety/depression" }, { v: "2x", l: "Better outcomes with partner support" }].map((s, i) => <div key={i} style={{ animation: `slideInUp 0.5s ease ${i * 0.1}s backwards` }}>
+                <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.5px" }}>{s.v}</div><div style={{ fontSize: 11, opacity: .65, marginTop: 4, fontWeight: "600" }}>{s.l}</div>
+              </div>)}
+            </div>
+          </div>
+        </div>
+        <div className="g3">
+          {PARTNER_MODULES.map((m, i) => <div key={m.id} className="know-card fade" style={{ background: m.color, border: `2px solid ${m.border}`, animation: `slideInUp 0.6s ease ${i * 0.1}s backwards`, transition: "all 0.3s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-8px)"; e.currentTarget.style.boxShadow = `0 16px 40px ${m.border}40`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}>
+            <div className="know-icon">{m.emoji}</div>
+            <div className="know-title" style={{ color: m.border }}>{m.title}</div>
+            <div className="know-desc">{m.content[0].q}</div>
+            <div className="know-badge"><span className="badge bp">{m.badge}</span></div>
+          </div>)}
+        </div>
+      </div>;
+    }
+
+    function PartnerLearn({ user }) {
+      const [mod, setMod] = useState(null);
+      const [idx, setIdx] = useState(0);
+      const [read, setRead] = useState({});
+
+      if (mod) {
+        const items = mod.content;
+        const item = items[idx];
+        const markRead = () => { setRead(r => ({ ...r, [`${mod.id}-${idx}`]: true })); if (idx < items.length - 1) setIdx(idx + 1); };
+        return <div className="fade">
+          <button className="btn btn-ghost" style={{ marginBottom: 16, fontSize: 12 }} onClick={() => { setMod(null); setIdx(0); }}>← Back to modules</button>
+          <div style={{ maxWidth: 720 }}>
+            <div style={{ background: mod.color, border: `2px solid ${mod.border}`, borderRadius: 18, padding: 28, marginBottom: 20, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "150px", height: "150px", background: "radial-gradient(circle, rgba(255,255,255,0.2))", borderRadius: "50%" }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ fontSize: 44, marginBottom: 12 }}>{mod.emoji}</div>
+                <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, marginBottom: 4, color: mod.border, fontWeight: "800" }}>{mod.title}</h2>
+              </div>
+            </div>
+            <div className="card" style={{ background: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Lesson {idx + 1} of {items.length}</div>
+                <div className="prog-bar" style={{ flex: 1, marginLeft: 12 }}><div className="prog-fill" style={{ width: `${((idx + 1) / items.length) * 100}%` }} /></div>
+              </div>
+              <div style={{ fontSize: 32, marginBottom: 16 }}>{item.icon}</div>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, marginBottom: 16, color: "#2563EB", fontWeight: "800" }}>{item.q}</h3>
+              <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.9, background: "linear-gradient(135deg, #F0FDF4, #F8FAFC)", borderRadius: 12, padding: 20, whiteSpace: "pre-line", borderLeft: "4px solid #059669" }}>{item.a}</div>
+              <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "space-between" }}>
+                <button className="btn btn-ghost" disabled={idx === 0} onClick={() => setIdx(idx - 1)} style={{ padding: "10px 16px" }}>← Previous</button>
+                <button className={`btn ${idx < items.length - 1 ? "btn-p" : ""}`} onClick={markRead} style={{ padding: "10px 16px", background: idx < items.length - 1 ? "linear-gradient(135deg, #2563EB, #3B82F6)" : "linear-gradient(135deg, #059669, #10B981)", color: "#fff", boxShadow: idx < items.length - 1 ? "0 8px 20px rgba(37,99,235,0.3)" : "0 8px 20px rgba(5,150,105,0.3)" }}>
+                  {idx < items.length - 1 ? "Mark Read & Next →" : "✓ Module Complete!"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>;
+      }
+
+      return <div className="fade">
+        <div className="card" style={{ marginBottom: 20, borderLeft: "4px solid #2563EB", background: "linear-gradient(135deg, #EFF6FF, #fff)" }}>
+          <div className="card-title">Partner Learning Hub 📖</div>
+          <div className="card-sub">5 comprehensive modules covering everything to support {user.partnerName || "your partner"}</div>
+        </div>
+        <div className="g2">{PARTNER_MODULES.map((m, i) => {
+          const done = m.content.filter((_, j) => read[`${m.id}-${j}`]).length;
+          return <div key={m.id} className="card fade" style={{ border: `2px solid ${m.border}`, cursor: "pointer", transition: "all .3s", background: m.color, animation: `slideInUp 0.6s ease ${i * 0.1}s backwards` }} onClick={() => { setMod(m); setIdx(0); }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 12px 32px ${m.border}30`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <div style={{ fontSize: 40 }}>{m.emoji}</div>
+              <span className="badge bp">{m.badge}</span>
+            </div>
+            <div className="card-title" style={{ fontSize: 18, color: m.border }}>{m.title}</div>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 6, marginBottom: 14, fontWeight: "600" }}>{m.content.length} lessons</div>
+            <div className="prog-bar"><div className="prog-fill" style={{ width: `${(done / m.content.length) * 100}%`, background: m.border }} /></div>
+            <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 8, fontWeight: "600" }}>{done}/{m.content.length} lessons read</div>
+          </div>;
+        })}</div>
+      </div>;
+    }
+
+    // ═════ EDUCATOR PORTAL ═════
+    function EduDash({ user }) {
+      return <div className="fade">
+        <div style={{ background: "linear-gradient(135deg, #064E3B 0%, #10B981 100%)", borderRadius: 20, padding: 32, color: "#fff", marginBottom: 28, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(5,150,105,0.3)" }}>
+          <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "200px", height: "200px", background: "radial-gradient(circle, rgba(255,255,255,0.1))", borderRadius: "50%" }} />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, marginBottom: 10, fontWeight: "800", letterSpacing: "-0.5px" }}>Welcome, {user.name}</h2>
+            <p style={{ opacity: .85, fontSize: 15, lineHeight: 1.8, maxWidth: 600 }}>You have access to structured curricula for Classes 6–12, classroom tools, and lesson plans designed to break menstrual stigma and empower students.</p>
+          </div>
+        </div>
+        <div className="g3">
+          {[{ i: "🌱", t: "Class 6–8", s: "Body Awareness", d: "Puberty, reproductive basics, hygiene", c: "linear-gradient(135deg, #ECFDF5, #fff)", b: "#A7F3D0", bc: "#059669" }, { i: "🔬", t: "Class 9–10", s: "Health & Awareness", d: "PCOD/PCOS intro, nutrition, mental health", c: "linear-gradient(135deg, #EFF6FF, #fff)", b: "#BFDBFE", bc: "#2563EB" }, { i: "🎓", t: "Class 11–12", s: "Advanced Health", d: "Management, advocacy, breaking stigma", c: "linear-gradient(135deg, #F5F3FF, #fff)", b: "#C4B5FD", bc: "#7C3AED" }].map((cl, i) => <div key={i} className="card fade" style={{ background: cl.c, border: `2px solid ${cl.b}`, animation: `slideInUp 0.6s ease ${i * 0.1}s backwards`, borderLeft: `4px solid ${cl.bc}`, transition: "all 0.3s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 12px 32px ${cl.bc}30`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>{cl.i}</div>
+            <div className="card-title" style={{ fontSize: 18, color: cl.bc }}>{cl.t}</div>
+            <div style={{ fontSize: 11, color: cl.bc, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5, marginBottom: 8, background: `${cl.bc}15`, width: "fit-content", padding: "4px 10px", borderRadius: "6px" }}>{cl.s}</div>
+            <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6 }}>{cl.d}</div>
+          </div>)}
+        </div>
+      </div>;
+    }
+
+    // ═════ MAIN APP ═════
+    function App() {
+      const [user, setUser] = useState(null);
+      const [page, setPage] = useState("dash");
+      const [water, setWater] = useState(3);
+      const [toastData, setToastData] = useState(null);
+
+      const toast = (msg, icon) => { setToastData({ msg, icon }); setTimeout(() => setToastData(null), 3200); };
+      const logout = () => { setUser(null); setPage("dash"); };
+
+      if (!user) return (
+        <AuthScreen onLogin={u => { setUser(u); setPage("dash"); }} />
+      );
+
+      const portal = user.portal;
+
+      const Sidebar = ({ nav, colors }) => (
+        <aside className="sidebar" style={{ background: colors.bg, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: "-30%", right: "-20%", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none", animation: "pulse 8s ease-in-out infinite" }} />
+          <div style={{ position: "absolute", bottom: "-10%", left: "-15%", width: "300px", height: "300px", background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none", animation: "pulse 10s ease-in-out infinite 2s" }} />
+          <div className="sidebar-inner" style={{ position: "relative", zIndex: 1 }}>
+            <div className="sb-logo">
+              <div className="sb-logo-mark" style={{ background: colors.mark, fontSize: "28px", boxShadow: `0 10px 30px rgba(0,0,0,0.3)`, animation: "bounce 2s ease-in-out infinite" }}>{colors.icon}</div>
+              <div className="sb-logo-name" style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginTop: "12px", letterSpacing: "-0.5px" }}>{colors.name}</div>
+              <div className="sb-logo-sub" style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", marginTop: "4px", fontWeight: "500" }}>{colors.sub}</div>
+            </div>
+            <div className="sb-nav">
+              <div className="sb-section" style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "1px", color: "rgba(255,255,255,0.5)", margin: "24px 0 12px 0" }}>{colors.section}</div>
+              {nav.map((n, idx) => <button key={n.id} className={`nav-btn ${page === n.id ? "on" : ""}`} style={{ animation: `slideInLeft 0.5s ease-out ${idx * 0.08}s both`, background: page === n.id ? "rgba(255,255,255,0.15)" : "transparent", borderLeft: page === n.id ? `3px solid ${colors.mark.split("rgb")[1] || "#fff"}` : "3px solid transparent", boxShadow: page === n.id ? "inset 0 2px 8px rgba(255,255,255,0.1)" : "none" }} onClick={() => setPage(n.id)}><span className="ni">{n.i}</span>{n.l}</button>)}
+            </div>
+          </div>
+          <div className="sb-foot" style={{ position: "relative", zIndex: 1 }}>
+            <div className="user-pill" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "12px", padding: "12px", marginBottom: "12px", backdropFilter: "blur(10px)" }}><div className="av" style={{ background: colors.avatar, width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "700", fontSize: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.3)", border: "2px solid rgba(255,255,255,0.2)" }}>{ini(user.name)}</div><div><div className="av-name" style={{ fontSize: "13px", fontWeight: "600", color: "#fff", marginLeft: "10px" }}>{user.name}</div><div className="av-role" style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", marginLeft: "10px", marginTop: "2px" }}>{colors.role}</div></div></div>
+            <button className="nav-btn" style={{ marginTop: 6, color: "rgba(255,255,255,0.5)", width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", transition: "all 0.3s ease", cursor: "pointer" }} onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.12)"; e.target.style.color = "rgba(255,255,255,0.8)"; }} onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,0.05)"; e.target.style.color = "rgba(255,255,255,0.5)"; }} onClick={logout}><span className="ni">🚪</span>Sign Out</button>
+          </div>
+        </aside>
+      );
+
+      const renderContent = () => {
+        if (portal === "woman") {
+          return page === "dash" ? <WomanDashboard user={user} water={water} setWater={setWater} toast={toast} /> : <div className="card"><p>Page {page} coming soon...</p></div>;
+        } else if (portal === "partner") {
+          return page === "dash" ? <PartnerDash user={user} /> : page === "learn" ? <PartnerLearn user={user} /> : <div className="card"><p>Page {page} coming soon...</p></div>;
+        } else {
+          return page === "dash" ? <EduDash user={user} /> : <div className="card"><p>Page {page} coming soon...</p></div>;
+        }
+      };
+
+      let sidebarConfig = {};
+      if (portal === "woman") {
+        sidebarConfig = {
+          nav: [
+            { id: "dash", i: "🏠", l: "Dashboard" }, { id: "period", i: "🩸", l: "Period Tracker" },
+            { id: "symptoms", i: "📋", l: "Symptoms" }, { id: "diet", i: "🥗", l: "Diet" },
+            { id: "exercise", i: "🏋️", l: "Exercise" }, { id: "analytics", i: "📊", l: "Analytics" },
+          ],
+          colors: {
+            bg: "linear-gradient(160deg, #7A1F4A, #3D0A2A, #5D1A3A)",
+            mark: "linear-gradient(135deg, #C84B7A, #E15597)",
+            icon: "🌸",
+            name: "PCOD Care",
+            sub: "Women's Health",
+            section: "Health Modules",
+            avatar: "linear-gradient(135deg, #C84B7A, #7A1F4A)",
+            role: "PCOD Warrior 🌸"
+          }
+        };
+      } else if (portal === "partner") {
+        sidebarConfig = {
+          nav: [
+            { id: "dash", i: "🏠", l: "Overview" }, { id: "learn", i: "📖", l: "Learning Hub" },
+            { id: "daily", i: "📋", l: "Daily Support" }, { id: "calendar", i: "📅", l: "Cycle Calendar" },
+          ],
+          colors: {
+            bg: "linear-gradient(160deg, #1E3A8A, #0F172A, #1a2f5c)",
+            mark: "linear-gradient(135deg, #2563EB, #60A5FA)",
+            icon: "💙",
+            name: "Partner Hub",
+            sub: "Support & Learn",
+            section: "Partner Modules",
+            avatar: "linear-gradient(135deg, #2563EB, #0EA5E9)",
+            role: "Supportive Partner 💙"
+          }
+        };
+      } else {
+        sidebarConfig = {
+          nav: [
+            { id: "dash", i: "🏫", l: "Dashboard" }, { id: "lessons", i: "📖", l: "Lesson Plans" },
+            { id: "classroom", i: "🎓", l: "Classroom Tools" }, { id: "resources", i: "📥", l: "Resources" },
+          ],
+          colors: {
+            bg: "linear-gradient(160deg, #064E3B, #0F172A, #0d5a47)",
+            mark: "linear-gradient(135deg, #059669, #10B981)",
+            icon: "📚",
+            name: "Edu Portal",
+            sub: "Health Education",
+            section: "Educator Tools",
+            avatar: "linear-gradient(135deg, #059669, #10B981)",
+            role: "Educator 📚"
+          }
+        };
+      }
+
+      return (
+        <div className="layout">
+          <Sidebar {...sidebarConfig} />
+          <main className="main">
+            <div className="topbar" style={{ 
+              background: portal === "woman" ? "linear-gradient(135deg, #F5E8EB 0%, #FDF0F5 100%)" : portal === "partner" ? "linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%)" : "linear-gradient(135deg, #F0FDF4 0%, #F0FFF4 100%)",
+              borderBottom: portal === "woman" ? "2px solid #E5BCC7" : portal === "partner" ? "2px solid #BFDBFE" : "2px solid #A7F3D0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              backdropFilter: "blur(10px)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "20px" }}>{portal === "woman" ? "🌸" : portal === "partner" ? "💙" : "📚"}</span>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: portal === "woman" ? "#7A1F4A" : portal === "partner" ? "#1E3A8A" : "#064E3B" }}>Dashboard</div>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+                </div>
+              </div>
+            </div>
+            <div className="page">
+              {renderContent()}
+            </div>
+          </main>
+          {toastData && <Toast msg={toastData.msg} icon={toastData.icon} close={() => setToastData(null)} />}
+        </div>
+      );
+    }
+
+    // Render the app
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

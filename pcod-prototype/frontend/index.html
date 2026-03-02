@@ -4,14 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PCOD Care Prototype</title>
-    <style>
-      body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 12px; }
-      .card { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
-      input, button, select, textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; }
-      .row { display:flex; gap:8px; }
-      .row > * { flex:1 }
-      ul { padding-left: 18px }
-    </style>
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
     <h1>PCOD Care — Prototype</h1>
@@ -155,7 +148,7 @@
           e('div', {className:'card'},
             e('h4', null, 'Log Symptom'),
             e('div', {className:'row'}, e('input', { placeholder:'Date (YYYY-MM-DD)', value:sDate, onChange:e=>setSDate(e.target.value) }), e('input', { placeholder:'Symptom (e.g. Acne)', value:sType, onChange:e=>setSType(e.target.value) })),
-            e('div', {className:'row'}, e('select', { value:sSeverity, onChange:e=>setSSeverity(parseInt(e.target.value)) }, [1,2,3,4,5].map(v => e('option', { key:v, value:v }, v + '')), e('input', { placeholder:'Notes', value:sNotes, onChange:e=>setSNotes(e.target.value) })),
+            e('div', {className:'row'}, e('select', { value:sSeverity, onChange:e=>setSSeverity(parseInt(e.target.value)) }, [1,2,3,4,5].map(v => e('option', { key:v, value:v }, v + ''))), e('input', { placeholder:'Notes', value:sNotes, onChange:e=>setSNotes(e.target.value) })),
             e('button', { onClick: addSymptom }, 'Add Symptom')
           ),
           e('div', {className:'card'}, e('h4', null, 'Your Periods'), periods.length === 0 ? e('div', null, 'No logs yet') : e('ul', null, periods.map(p => e('li', { key: p.id }, `${p.start_date}${p.end_date ? ' → ' + p.end_date : ''} ${p.notes ? '- ' + p.notes : ''}`)))),
